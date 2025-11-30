@@ -28,10 +28,12 @@ fn part2(input: &str) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::example;
+    use crate::{example, input_test};
 
     example!(test_part1, part1, "test input", 0);
     example!(test_part2, part2, "test input", 0);
+
+    // input_test!("$DAY", 0, 0);
 }
 "#;
 
@@ -232,7 +234,7 @@ fn handle_create(day: Option<u8>) {
         return;
     }
 
-    fs::write(&src_path, TEMPLATE).expect("Failed to write source file");
+    fs::write(&src_path, TEMPLATE.replace("$DAY", &day_str)).expect("Failed to write source file");
     println!("{} Created {}", "Success:".green(), src_path);
 
     if !Path::new(&input_path).exists() {
