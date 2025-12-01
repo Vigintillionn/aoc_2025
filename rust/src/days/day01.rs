@@ -8,58 +8,42 @@ pub fn solve(input: &str) -> Solution {
 }
 
 fn part1(input: &str) -> i64 {
-    let mut cur_pos: i64 = 50;
-    let mut zero_count: i64 = 0;
-
-    for line in input.lines().map(str::trim).filter(|l| !l.is_empty()) {
-        let (dir, _) = line.split_once(' ').unwrap_or_else(|| line.split_at(1));
-        let amount: i64 = line[1..].parse().expect("Invalid number");
-
-        match dir {
-            "R" => cur_pos = (cur_pos + amount).rem_euclid(100),
-            "L" => cur_pos = (cur_pos - amount).rem_euclid(100),
-            _ => panic!("Unknown direction {}", dir),
-        }
-
-        if cur_pos == 0 {
-            zero_count += 1;
-        }
-    }
-
-    zero_count
+    input
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(|s| {
+            let (dir, num) = s.split_at(1);
+            let n: i64 = num.parse().unwrap();
+            if dir == "L" { -n } else { n }
+        })
+        .fold((50, 0), |(cur_pos, zero_count), delta| {
+            let new_pos = (cur_pos + delta).rem_euclid(100);
+            let zero_count = zero_count + (new_pos == 0) as i64;
+            (new_pos, zero_count)
+        })
+        .1
 }
 
 fn part2(input: &str) -> i64 {
-    let mut cur_pos: i64 = 50;
-    let mut total_zeros: i64 = 0;
-
-    fn floor_div_100(n: i64) -> i64 {
-        if n >= 0 { n / 100 } else { (n - 99) / 100 }
-    }
-
-    for line in input.lines().map(str::trim).filter(|l| !l.is_empty()) {
-        let (dir, _) = line.split_once(' ').unwrap_or_else(|| line.split_at(1));
-        let amount: i64 = line[1..].parse().expect("Invalid number");
-
-        match dir {
-            "R" => {
-                total_zeros += (cur_pos + amount) / 100;
-                cur_pos = (cur_pos + amount) % 100;
+    input
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(|s| {
+            let (sign, num) = s.split_at(1);
+            let n: i64 = num.parse().unwrap();
+            if sign == "L" { -n } else { n }
+        })
+        .fold((50, 0), |(acc, count), x| {
+            let mut count = count + (x.abs() / 100);
+            let nx = x % 100;
+            if (nx > 0 && acc + nx >= 100) || (nx < 0 && nx.abs() >= acc && acc != 0) {
+                count += 1
             }
-            "L" => {
-                let upper_bound = cur_pos;
-                let lower_bound = cur_pos - amount;
-
-                let count = floor_div_100(upper_bound - 1) - floor_div_100(lower_bound - 1);
-                total_zeros += count;
-
-                cur_pos = (cur_pos - amount).rem_euclid(100);
-            }
-            _ => panic!("Unknown direction {}", dir),
-        }
-    }
-
-    total_zeros
+            ((acc + nx).rem_euclid(100), count)
+        })
+        .1
 }
 
 #[cfg(test)]
