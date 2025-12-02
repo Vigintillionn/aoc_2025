@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashSet;
 
 use crate::Solution;
@@ -60,31 +61,39 @@ fn part1(input: &str) -> i64 {
     total
 }
 
-fn build_repeated_sequence(pattern: i64, pattern_len: u32, repetitions: u32) -> i64 {
-    let mut result = 0i64;
-    let multiplier = 10i64.pow(pattern_len);
-
-    for _ in 0..repetitions {
-        result = result * multiplier + pattern;
-    }
-
-    result
-}
-
 fn count_repeated_sequences(start: i64, end: i64) -> i64 {
     let mut seen = HashSet::new();
 
-    for pattern_len in 1..=9 {
-        let min_pattern = 10i64.pow(pattern_len - 1);
-        let max_pattern = 10i64.pow(pattern_len) - 1;
+    for len in 1..=9 {
+        let min_pattern = 10i64.pow(len - 1);
+        let max_pattern = 10i64.pow(len) - 1;
+        let block = 10i64.pow(len);
 
-        for reps in 2..=(18 / pattern_len) {
-            if build_repeated_sequence(min_pattern, pattern_len, reps) > end {
+        let mut mult: i64 = 1;
+
+        for _ in 2..=(19 / len) {
+            match mult.checked_mul(block) {
+                Some(m) => mult = m + 1,
+                None => break,
+            }
+
+            let min_val = match min_pattern.checked_mul(mult) {
+                Some(v) => v,
+                None => break,
+            };
+
+            if min_val > end {
                 break;
             }
 
-            for pattern in min_pattern..=max_pattern {
-                let full = build_repeated_sequence(pattern, pattern_len, reps);
+            let heuristic_start = start / mult;
+            let actual_start_pat = cmp::max(min_pattern, heuristic_start);
+
+            for pattern in actual_start_pat..=max_pattern {
+                let full = match pattern.checked_mul(mult) {
+                    Some(v) => v,
+                    None => break,
+                };
 
                 if full > end {
                     break;
@@ -104,9 +113,14 @@ fn part2(input: &str) -> i64 {
     let mut total = 0;
 
     for range in input.split(',') {
-        let mut parts = range.split('-');
+        let trimmed = range.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let mut parts = trimmed.split('-');
         if let (Some(start_str), Some(end_str)) = (parts.next(), parts.next()) {
-            if let (Ok(start), Ok(end)) = (start_str.parse(), end_str.parse()) {
+            if let (Ok(start), Ok(end)) = (start_str.parse::<i64>(), end_str.parse::<i64>()) {
                 total += count_repeated_sequences(start, end);
             }
         }
